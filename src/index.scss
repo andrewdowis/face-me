@@ -1,0 +1,12 @@
+@import "./styles/_variables";
+
+body {
+  @include flex-center;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  box-sizing: border-box;
+}

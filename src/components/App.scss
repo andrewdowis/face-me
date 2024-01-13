@@ -1,0 +1,14 @@
+@import "../styles/_variables";
+
+.App {
+  .image-container {
+    .image-with-faces {
+      margin: 20px;
+      padding: 20px;
+      background-color: pink;
+    }
+    img {
+      max-width: 200px;
+    }
+  }
+}
