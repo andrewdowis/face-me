@@ -1,8 +1,17 @@
 import "./App.scss"
 
-import { useEffect, useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
-import imglyRemoveBackground from "@imgly/background-removal"
+function toRadians(degree) {
+  return (Math.PI / 180.0) * degree
+}
+
+function getAnglePoint(x, y, distance, angle) {
+  var x = x + Math.cos(angle) * distance
+  var y = y + Math.sin(angle) * distance
+
+  return [x, y]
+}
 
 function importAll(r) {
   let images = {}
@@ -13,103 +22,369 @@ function importAll(r) {
 }
 const images = importAll(require.context("../assets/images/faces", false, /\.(png|jpe?g|svg)$/))
 
-// const Thing = ({ title, value }) => {
-//   console.log("TITLE", title)
+const Thing = ({ title, value, callback, method }) => {
+  const canvasRef = useRef()
+  const canvasStrokeRef = useRef()
 
-//   const [image, setImage] = useState()
+  useEffect(() => {
+    const img = new Image()
+    img.src = value
+    img.onload = () => {
+      const { current: c } = canvasRef
+      const { current: cStroke } = canvasStrokeRef
+      var ctx = c.getContext("2d", { willReadFrequently: true })
+      var ctxStroke = cStroke.getContext("2d", { willReadFrequently: true })
 
-//   useLayoutEffect(() => {
-//     const img = new Image()
-//     img.src = value
-//     img.onload = () => {
-//       console.log("LOAD")
-//       var c = document.createElement("canvas")
-//       var ctx = c.getContext("2d")
+      const strokeSize = 40 + 1
 
-//       c.width = Math.min(img.width, 200)
-//       c.height = (c.width / img.width) * img.height
-//       ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height) // draw in image
+      c.width = Math.min(img.width, 400)
+      c.height = (c.width / img.width) * img.height
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height) // draw in image
 
-//       // setImage(img)
-//       // return
-//       c.toBlob(
-//         function (blob) {
-//           // return setImage(URL.createObjectURL(blob))
-//           imglyRemoveBackground(blob)
-//             .then(blob => {
-//               // The result is a blob encoded as PNG. It can be converted to an URL to be used as HTMLImage.src
-//               console.log(
-//                 `%c BLOB`,
-//                 `color: black; background-color: lime; font-style: italic; padding: 0px; margin-left: 0px;`
-//               )
-//               console.log(blob)
+      const bounds = {
+        left: 0,
+        right: c.width - 1,
+        top: 0,
+        bottom: c.height - 1,
+      }
 
-//               const other = new Image()
-//               other.onload = () => {
-//                 console.log(
-//                   `%c DONE?!!!`,
-//                   `color: white; background-color: blue; font-style: italic; padding: 0px; margin-left: 0px;`
-//                 )
-//                 setImage(other)
-//               }
-//               other.src = URL.createObjectURL(blob)
-//               console.warn(other.src)
+      ctx.fillStyle = "red"
 
-//               // const url = URL.createObjectURL(blob);
-//             })
-//             .catch(error => {
-//               console.log(
-//                 `%c no...`,
-//                 `color: white; background-color: red; font-style: italic; padding: 0px; margin-left: 0px;`
-//               )
-//               console.log(error)
-//             })
-//         },
-//         "image/jpeg",
-//         0.75
-//       )
-//     }
-//   }, [])
+      console.log("\t running new version?", method)
+      let pixels = 0
+      if (method === "method1") {
+        const allData = ctx.getImageData(0, 0, c.width, c.height).data
 
-//   if (!image) return null
+        for (let i = 0; i < c.width; i++) {
+          let kill
+          for (let h = 0; h < c.height; h++) {
+            const [r, g, b, a] = allData.slice((h * c.width + i) * 4, (h * c.width + i) * 4 + 4)
 
-//   console.log(
-//     `%c OK MAN!`,
-//     `color: black; background-color: white; font-style: italic; padding: 0px; margin-left: 0px;`
-//   )
-//   console.log(image)
-//   console.log(image.src)
-//   return (
-//     <div className="image-with-faces">
-//       <h4>{title}</h4>
-//       <div className="images">
-//         <img src={value} />
-//         <img src={image.src} />
-//         {/* <img src={image.src} /> */}
-//       </div>
-//     </div>
-//   )
-// }
+            pixels++
+            if (r + g + b + a) {
+              kill = true
+              bounds.left = [i, 0, 1, c.height]
+              break
+            }
+          }
+          if (kill) {
+            break
+          }
+        }
+        for (let i = c.width; i > -1; i--) {
+          let kill
+          for (let h = 0; h < c.height; h++) {
+            const [r, g, b, a] = allData.slice((h * c.width + i) * 4, (h * c.width + i) * 4 + 4)
+
+            pixels++
+            if (r + g + b + a) {
+              kill = true
+              bounds.right = [i, 0, 1, c.height]
+              break
+            }
+          }
+          if (kill) {
+            break
+          }
+        }
+        for (let i = 0; i < c.height; i++) {
+          let kill
+          for (let h = 0; h < c.width; h++) {
+            const [r, g, b, a] = allData.slice((i * c.width + h) * 4, (i * c.width + h) * 4 + 4)
+
+            pixels++
+            if (r + g + b + a) {
+              kill = true
+              bounds.top = [0, i, c.width, 1]
+              break
+            }
+          }
+          if (kill) {
+            break
+          }
+        }
+        for (let i = c.height; i > -1; i--) {
+          let kill
+          for (let h = 0; h < c.width; h++) {
+            const [r, g, b, a] = allData.slice((i * c.width + h) * 4, (i * c.width + h) * 4 + 4)
+
+            pixels++
+            if (r + g + b + a) {
+              kill = true
+              bounds.bottom = [0, i, c.width, 1]
+              break
+            }
+          }
+          if (kill) {
+            break
+          }
+        }
+      } else if (method === "method2") {
+        for (let i = 0; i < c.width; i++) {
+          const array = [i, 0, 1, c.height]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.left = array
+            break
+          }
+        }
+        for (let i = c.width; i > -1; i--) {
+          const array = [i, 0, 1, c.height]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.right = array
+            break
+          }
+        }
+
+        for (let i = 0; i < c.height; i++) {
+          const array = [0, i, c.width, 1]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.top = array
+            break
+          }
+        }
+        for (let i = c.height; i > -1; i--) {
+          const array = [0, i, c.width, 1]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.bottom = array
+            break
+          }
+        }
+      } else if (method === "method3") {
+        for (let i = 0; i < c.width; i++) {
+          const array = [i, 0, 1, c.height]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.left = array
+            break
+          }
+        }
+        for (let i = c.width; i > -1; i--) {
+          const array = [i, 0, 1, c.height]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.right = array
+            break
+          }
+        }
+
+        for (let i = 0; i < c.height; i++) {
+          const array = [0, i, c.width, 1]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.top = array
+            break
+          }
+        }
+        for (let i = c.height; i > -1; i--) {
+          const array = [0, i, c.width, 1]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.bottom = array
+            break
+          }
+        }
+      }
+
+      // Object.entries(bounds).forEach(([key, array]) => {
+      //   console.log("OK GO", key)
+      //   console.log(array)
+      //   if (!Array.isArray(array)) return
+
+      //   ctx.rect.apply(ctx, array)
+      //   ctx.fill()
+      // })
+
+      // return callback && callback()
+
+      // the number 45 represents 1/8 of a circle
+      // by increasing the number the stroke will be better fitted around the source image
+      const left = bounds.left[0]
+      const top = bounds.top[1]
+      cStroke.width = bounds.right[0] - left + strokeSize * 2
+      cStroke.height = bounds.bottom[1] - top + strokeSize * 2
+
+      const drawButOffset = (x, y) => {
+        // ctxStroke.drawImage(c, x, y)
+        ctxStroke.drawImage(c, x - left + strokeSize, y - top + strokeSize)
+      }
+
+      for (let i = 0; i < 45; i += 4) {
+        for (let s = 1; s < strokeSize; s++) {
+          let [x, y] = getAnglePoint(0, 0, s, toRadians(i + s / strokeSize))
+
+          drawButOffset(x, y)
+          drawButOffset(x, -y)
+          drawButOffset(-x, -y)
+          drawButOffset(-x, y)
+          drawButOffset(y, x)
+          drawButOffset(y, -x)
+          drawButOffset(-y, -x)
+          drawButOffset(-y, x)
+        }
+      }
+
+      let color = "white"
+      if (method === "method2") color = "blue"
+      if (method === "method3") color = "yellow"
+
+      ctxStroke.fillStyle = color
+      ctxStroke.globalCompositeOperation = "source-in"
+      ctxStroke.rect(0, 0, cStroke.width, cStroke.height)
+      ctxStroke.fill()
+
+      ctxStroke.globalCompositeOperation = "source-over"
+      ctxStroke.drawImage(c, -left + strokeSize, -top + strokeSize)
+
+      return callback && callback(pixels)
+    }
+  }, [method])
+
+  return (
+    <div className="image-with-faces">
+      <h4>{title}</h4>
+      <div className="images">
+        <img src={value} alt={title} />
+        <canvas ref={canvasRef} />
+        <canvas ref={canvasStrokeRef} />
+      </div>
+    </div>
+  )
+}
 
 function App() {
+  const start = useRef()
+  const [imageArray, setImageArray] = useState()
+  const [total, setTotal] = useState()
+  const done = useRef()
+  const [iteration, setIteration] = useState(0)
+
+  const values = useRef([[], [], []])
+  const pixelCounts = useRef([[], [], []])
+
+  useEffect(() => console.clear(), [])
+
+  useEffect(() => {
+    done.current = 0
+    let array = Object.entries(images)
+    const finalArray = []
+    // const finalArray = array.filter(([key, value]) => key.includes("crop"))
+    for (let i = 0; i < 100; i++) finalArray.push(...array)
+
+    const total = finalArray.filter(([key, value]) => key.includes("crop")).length
+
+    setImageArray(finalArray)
+    setTotal(total)
+
+    console.log(
+      `%c starting, round ${iteration + 1}`,
+      `color: black; background-color: lime; font-style: italic; padding: 0px; margin-left: 0px;`
+    )
+    console.time()
+    start.current = new Date()
+  }, [iteration])
+
+  const callback = pixels => {
+    if (++done.current === total) {
+      const end = new Date()
+
+      const duration = end.getTime() - start.current.getTime()
+      console.log(duration)
+      console.timeEnd()
+      const version = iteration % 3
+      console.log("ENDING BUT", version)
+      values.current[version].push(duration)
+      pixelCounts.current[version].push(pixels)
+      if (iteration + 1 < 3) {
+        setIteration(iteration + 1)
+      } else {
+        console.log(
+          `%c DONE DONE DONE`,
+          `color: black; background-color: orange; font-style: italic; padding: 0px; margin-left: 0px;`
+        )
+        const average1 = values.current[0].reduce((acc, cur) => acc + cur, 0) / values.current[0].length
+        const average2 = values.current[1].reduce((acc, cur) => acc + cur, 0) / values.current[1].length
+        const average3 = values.current[2].reduce((acc, cur) => acc + cur, 0) / values.current[2].length
+
+        const pixelAverage1 = pixelCounts.current[0].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[0].length
+        const pixelAverage2 = pixelCounts.current[1].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[1].length
+        const pixelAverage3 = pixelCounts.current[2].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[2].length
+        console.log(values.current)
+        console.log(pixelCounts.current)
+        const averages = { average1, average2, average3 }
+        let min = { key: "", value: Infinity }
+        console.log(average1, average2, average3)
+        Object.entries(averages).forEach(([key, value]) => {
+          if (value < min.value) {
+            min.key = key
+            min.value = value
+          }
+        })
+        console.log(`${min.key} value is the fastest`)
+
+        const pixelAverages = { pixelAverage1, pixelAverage2, pixelAverage3 }
+        min = { key: "", value: Infinity }
+        console.log(pixelAverage1, pixelAverage2, pixelAverage3)
+        Object.entries(pixelAverages).forEach(([key, value]) => {
+          if (value < min.value) {
+            min.key = key
+            min.value = value
+          }
+        })
+        console.log(`${min.key} has the fewest pixels`)
+      }
+    }
+  }
+
+  if (!imageArray?.length) return null
+
   return (
     <div className="App">
       THE APP
       <div className="image-container" id="image-container">
-        {Object.entries(images).map(([key, value], i) => {
-          if (!key.includes("man1")) return null
+        {imageArray.map(([key, value], i) => {
+          if (!key.includes("crop")) return null
           // if (i) return null
 
           // return <img src={value} alt={key} key={key} />
+          // return (
+          //   <div className="image-with-faces">
+          //     <h4>{key}</h4>
+          //     <div className="images">
+          //       <img src={value} alt={key} key={key} />
+          //     </div>
+          //   </div>
+          // )
           return (
-            <div className="image-with-faces">
-              <h4>{key}</h4>
-              <div className="images">
-                <img src={value} alt={key} key={key} />
-              </div>
-            </div>
+            <Thing title={key} key={`key---${i}`} {...{ value, callback }} method={`method${(iteration % 3) + 1}`} />
           )
-          // return <Thing key={key} title={key} value={value} />
         })}
       </div>
     </div>
