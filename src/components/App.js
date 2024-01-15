@@ -1,6 +1,6 @@
 import "./App.scss"
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 function toRadians(degree) {
   return (Math.PI / 180.0) * degree
@@ -29,6 +29,7 @@ const Thing = ({ title, value, callback, method }) => {
   useEffect(() => {
     const img = new Image()
     img.src = value
+
     img.onload = () => {
       const { current: c } = canvasRef
       const { current: cStroke } = canvasStrokeRef
@@ -53,69 +54,48 @@ const Thing = ({ title, value, callback, method }) => {
       console.log("\t running new version?", method)
       let pixels = 0
       if (method === "method1") {
-        const allData = ctx.getImageData(0, 0, c.width, c.height).data
-
         for (let i = 0; i < c.width; i++) {
-          let kill
-          for (let h = 0; h < c.height; h++) {
-            const [r, g, b, a] = allData.slice((h * c.width + i) * 4, (h * c.width + i) * 4 + 4)
+          const array = [i, 0, 1, c.height]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
 
-            pixels++
-            if (r + g + b + a) {
-              kill = true
-              bounds.left = [i, 0, 1, c.height]
-              break
-            }
-          }
-          if (kill) {
+          pixels += data.length / 4
+          if (value) {
+            bounds.left = array
             break
           }
         }
         for (let i = c.width; i > -1; i--) {
-          let kill
-          for (let h = 0; h < c.height; h++) {
-            const [r, g, b, a] = allData.slice((h * c.width + i) * 4, (h * c.width + i) * 4 + 4)
+          const array = [i, 0, 1, c.height]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
 
-            pixels++
-            if (r + g + b + a) {
-              kill = true
-              bounds.right = [i, 0, 1, c.height]
-              break
-            }
-          }
-          if (kill) {
+          pixels += data.length / 4
+          if (value) {
+            bounds.right = array
             break
           }
         }
-        for (let i = 0; i < c.height; i++) {
-          let kill
-          for (let h = 0; h < c.width; h++) {
-            const [r, g, b, a] = allData.slice((i * c.width + h) * 4, (i * c.width + h) * 4 + 4)
 
-            pixels++
-            if (r + g + b + a) {
-              kill = true
-              bounds.top = [0, i, c.width, 1]
-              break
-            }
-          }
-          if (kill) {
+        for (let i = 0; i < c.height; i++) {
+          const array = [0, i, c.width, 1]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
+
+          pixels += data.length / 4
+          if (value) {
+            bounds.top = array
             break
           }
         }
         for (let i = c.height; i > -1; i--) {
-          let kill
-          for (let h = 0; h < c.width; h++) {
-            const [r, g, b, a] = allData.slice((i * c.width + h) * 4, (i * c.width + h) * 4 + 4)
+          const array = [0, i, c.width, 1]
+          const data = ctx.getImageData.apply(ctx, array).data
+          const value = data.reduce((acc, cur) => cur + acc, 0)
 
-            pixels++
-            if (r + g + b + a) {
-              kill = true
-              bounds.bottom = [0, i, c.width, 1]
-              break
-            }
-          }
-          if (kill) {
+          pixels += data.length / 4
+          if (value) {
+            bounds.bottom = array
             break
           }
         }
@@ -144,7 +124,7 @@ const Thing = ({ title, value, callback, method }) => {
         }
 
         for (let i = 0; i < c.height; i++) {
-          const array = [0, i, c.width, 1]
+          const array = [bounds.left[0], i, bounds.right[0] - bounds.left[0], 1]
           const data = ctx.getImageData.apply(ctx, array).data
           const value = data.reduce((acc, cur) => cur + acc, 0)
 
@@ -155,53 +135,7 @@ const Thing = ({ title, value, callback, method }) => {
           }
         }
         for (let i = c.height; i > -1; i--) {
-          const array = [0, i, c.width, 1]
-          const data = ctx.getImageData.apply(ctx, array).data
-          const value = data.reduce((acc, cur) => cur + acc, 0)
-
-          pixels += data.length / 4
-          if (value) {
-            bounds.bottom = array
-            break
-          }
-        }
-      } else if (method === "method3") {
-        for (let i = 0; i < c.width; i++) {
-          const array = [i, 0, 1, c.height]
-          const data = ctx.getImageData.apply(ctx, array).data
-          const value = data.reduce((acc, cur) => cur + acc, 0)
-
-          pixels += data.length / 4
-          if (value) {
-            bounds.left = array
-            break
-          }
-        }
-        for (let i = c.width; i > -1; i--) {
-          const array = [i, 0, 1, c.height]
-          const data = ctx.getImageData.apply(ctx, array).data
-          const value = data.reduce((acc, cur) => cur + acc, 0)
-
-          pixels += data.length / 4
-          if (value) {
-            bounds.right = array
-            break
-          }
-        }
-
-        for (let i = 0; i < c.height; i++) {
-          const array = [0, i, c.width, 1]
-          const data = ctx.getImageData.apply(ctx, array).data
-          const value = data.reduce((acc, cur) => cur + acc, 0)
-
-          pixels += data.length / 4
-          if (value) {
-            bounds.top = array
-            break
-          }
-        }
-        for (let i = c.height; i > -1; i--) {
-          const array = [0, i, c.width, 1]
+          const array = [bounds.left[0], i, bounds.right[0] - bounds.left[0], 1]
           const data = ctx.getImageData.apply(ctx, array).data
           const value = data.reduce((acc, cur) => cur + acc, 0)
 
@@ -212,6 +146,8 @@ const Thing = ({ title, value, callback, method }) => {
           }
         }
       }
+
+      callback && callback(pixels)
 
       // Object.entries(bounds).forEach(([key, array]) => {
       //   console.log("OK GO", key)
@@ -254,6 +190,7 @@ const Thing = ({ title, value, callback, method }) => {
       let color = "white"
       if (method === "method2") color = "blue"
       if (method === "method3") color = "yellow"
+      if (method === "method4") color = "black"
 
       ctxStroke.fillStyle = color
       ctxStroke.globalCompositeOperation = "source-in"
@@ -286,8 +223,8 @@ function App() {
   const done = useRef()
   const [iteration, setIteration] = useState(0)
 
-  const values = useRef([[], [], []])
-  const pixelCounts = useRef([[], [], []])
+  const values = useRef([[], [], [], []])
+  const pixelCounts = useRef([[], [], [], []])
 
   useEffect(() => console.clear(), [])
 
@@ -296,7 +233,7 @@ function App() {
     let array = Object.entries(images)
     const finalArray = []
     // const finalArray = array.filter(([key, value]) => key.includes("crop"))
-    for (let i = 0; i < 100; i++) finalArray.push(...array)
+    for (let i = 0; i < 20; i++) finalArray.push(...array)
 
     const total = finalArray.filter(([key, value]) => key.includes("crop")).length
 
@@ -318,11 +255,11 @@ function App() {
       const duration = end.getTime() - start.current.getTime()
       console.log(duration)
       console.timeEnd()
-      const version = iteration % 3
+      const version = iteration % 2
       console.log("ENDING BUT", version)
       values.current[version].push(duration)
       pixelCounts.current[version].push(pixels)
-      if (iteration + 1 < 3) {
+      if (iteration + 1 < 12) {
         setIteration(iteration + 1)
       } else {
         console.log(
@@ -332,15 +269,18 @@ function App() {
         const average1 = values.current[0].reduce((acc, cur) => acc + cur, 0) / values.current[0].length
         const average2 = values.current[1].reduce((acc, cur) => acc + cur, 0) / values.current[1].length
         const average3 = values.current[2].reduce((acc, cur) => acc + cur, 0) / values.current[2].length
+        const average4 = values.current[3].reduce((acc, cur) => acc + cur, 0) / values.current[3].length
 
         const pixelAverage1 = pixelCounts.current[0].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[0].length
         const pixelAverage2 = pixelCounts.current[1].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[1].length
         const pixelAverage3 = pixelCounts.current[2].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[2].length
+        const pixelAverage4 = pixelCounts.current[3].reduce((acc, cur) => acc + cur, 0) / pixelCounts.current[3].length
+
         console.log(values.current)
         console.log(pixelCounts.current)
-        const averages = { average1, average2, average3 }
+        const averages = { average1, average2, average3, average4 }
         let min = { key: "", value: Infinity }
-        console.log(average1, average2, average3)
+        console.log(average1, average2, average3, average4)
         Object.entries(averages).forEach(([key, value]) => {
           if (value < min.value) {
             min.key = key
@@ -349,9 +289,9 @@ function App() {
         })
         console.log(`${min.key} value is the fastest`)
 
-        const pixelAverages = { pixelAverage1, pixelAverage2, pixelAverage3 }
+        const pixelAverages = { pixelAverage1, pixelAverage2, pixelAverage3, pixelAverage4 }
         min = { key: "", value: Infinity }
-        console.log(pixelAverage1, pixelAverage2, pixelAverage3)
+        console.log(pixelAverage1, pixelAverage2, pixelAverage3, pixelAverage4)
         Object.entries(pixelAverages).forEach(([key, value]) => {
           if (value < min.value) {
             min.key = key
@@ -383,7 +323,7 @@ function App() {
           //   </div>
           // )
           return (
-            <Thing title={key} key={`key---${i}`} {...{ value, callback }} method={`method${(iteration % 3) + 1}`} />
+            <Thing title={key} key={`key---${i}`} {...{ value, callback }} method={`method${(iteration % 2) + 1}`} />
           )
         })}
       </div>

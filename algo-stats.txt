@@ -1,0 +1,19 @@
+0 0 0 0 0 0 0
+1 1 1 5 5 1 1
+2 2 2 2 2 2 2
+3 3 3 3 3 3 3
+
+width then height
+1x4x5 = 20
+2x1x3 = 6
+26 pixels examined
+
+height then width
+
+7x1x3 - 21
+1x4x2 = 8
+
+27 pixels examined
+
+
+
