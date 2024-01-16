@@ -10,8 +10,20 @@
     canvas,
     img {
       margin: 10px;
-      border: 1px dashed blue;
       max-width: 400px;
     }
+
+    img {
+      border: 5px dashed yellow;
+    }
+
+    canvas {
+      border: 5px dashed blue;
+    }
+  }
+
+  .error-box {
+    width: 100px;
+    border: 10px dashed red;
   }
 }
