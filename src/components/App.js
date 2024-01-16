@@ -2,6 +2,10 @@ import "./App.scss"
 
 import { useEffect, useRef, useState } from "react"
 
+import FaceImg from "../assets/images/facePng.png"
+// import FaceImg2 from "../assets/images/facePng2.png"
+import FaceImg2 from "../assets/images/faces/crop1.png"
+
 function toRadians(degree) {
   return (Math.PI / 180.0) * degree
 }
@@ -13,197 +17,132 @@ function getAnglePoint(x, y, distance, angle) {
   return [x, y]
 }
 
-function importAll(r) {
-  let images = {}
-  r.keys().forEach((item, index) => {
-    images[item.replace("./", "")] = r(item)
-  })
-  return images
-}
-const images = importAll(require.context("../assets/images/faces", false, /\.(png|jpe?g|svg)$/))
+// function importAll(r) {
+//   let images = {}
+//   r.keys().forEach((item, index) => {
+//     images[item.replace("./", "")] = r(item)
+//   })
+//   return images
+// }
+// const images = importAll(require.context("../assets/images/faces", false, /\.(png|jpe?g|svg)$/))
 
-const Thing = ({ title, value }) => {
+const StrokeItem = ({ url }) => {
   const canvasRef = useRef()
   const canvasStrokeRef = useRef()
-  const [response, setResponse] = useState()
-  const [facesArray, setFacesArray] = useState([])
-  const [error, setError] = useState("")
-  const [img2, setImg2] = useState()
+  const canvasStroke2Ref = useRef()
 
   const build = async () => {
     const img = new Image()
-    img.src = value
+    img.src = url
 
     img.onload = async () => {
-      // const { current: c } = canvasRef
-      // const { current: cStroke } = canvasStrokeRef
-      // var ctx = c.getContext("2d", { willReadFrequently: true })
-      // var ctxStroke = cStroke.getContext("2d", { willReadFrequently: true })
+      const { current: c } = canvasRef
+      const { current: cStroke } = canvasStrokeRef
+      const { current: cStroke2 } = canvasStroke2Ref
 
-      // const strokeSize = 40 + 1
+      var ctx = c.getContext("2d", { willReadFrequently: true })
+      var ctxStroke = cStroke.getContext("2d", { willReadFrequently: true })
+      var ctxStroke2 = cStroke2.getContext("2d", { willReadFrequently: true })
 
-      // c.width = Math.min(img.width, 400)
-      // c.height = (c.width / img.width) * img.height
-      // ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height) // draw in image
+      const strokeSize = 40 + 1
 
-      // const bounds = {
-      //   left: 0,
-      //   right: c.width - 1,
-      //   top: 0,
-      //   bottom: c.height - 1,
-      // }
+      c.width = img.width
+      c.height = (c.width / img.width) * img.height
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height) // draw in image
 
-      // for (let i = 0; i < c.width; i++) {
-      //   const array = [i, 0, 1, c.height]
-      //   const data = ctx.getImageData.apply(ctx, array).data
-      //   const value = data.reduce((acc, cur) => cur + acc, 0)
+      // the number 45 represents 1/8 of a circle
+      // by increasing the number the stroke will be better fitted around the source image
+      cStroke.width = c.width + strokeSize * 2
+      cStroke.height = c.height + strokeSize * 2
+      cStroke2.width = cStroke.width
+      cStroke2.height = cStroke.height
+      // cStroke2.width = c.width
+      // cStroke2.height = c.height
 
-      //   if (value) {
-      //     bounds.left = array
-      //     break
-      //   }
-      // }
-      // for (let i = c.width; i > -1; i--) {
-      //   const array = [i, 0, 1, c.height]
-      //   const data = ctx.getImageData.apply(ctx, array).data
-      //   const value = data.reduce((acc, cur) => cur + acc, 0)
+      const drawButOffset = (x, y) => {
+        // ctxStroke.drawImage(c, x, y)
+        ctxStroke.drawImage(c, x + strokeSize, y + strokeSize)
+      }
 
-      //   if (value) {
-      //     bounds.right = array
-      //     break
-      //   }
-      // }
+      const start1 = new Date()
+      for (let b = 0; b < 1; b++) {
+        for (let i = 0; i < 45; i += 4) {
+          for (let s = 1; s < strokeSize; s++) {
+            let [x, y] = getAnglePoint(0, 0, s, toRadians(i + b + s / strokeSize))
+            drawButOffset(x, y)
+            drawButOffset(x, -y)
+            drawButOffset(-x, -y)
+            drawButOffset(-x, y)
+            drawButOffset(y, x)
+            drawButOffset(y, -x)
+            drawButOffset(-y, -x)
+            drawButOffset(-y, x)
+          }
+        }
+      }
 
-      // for (let i = 0; i < c.height; i++) {
-      //   const array = [bounds.left[0], i, bounds.right[0] - bounds.left[0], 1]
-      //   const data = ctx.getImageData.apply(ctx, array).data
-      //   const value = data.reduce((acc, cur) => cur + acc, 0)
+      // old stroke
+      ctxStroke.fillStyle = "white"
+      ctxStroke.globalCompositeOperation = "source-in"
+      ctxStroke.rect(0, 0, cStroke.width, cStroke.height)
+      ctxStroke.fill()
+      ctxStroke.globalCompositeOperation = "source-over"
+      ctxStroke.drawImage(c, strokeSize, strokeSize)
 
-      //   if (value) {
-      //     bounds.top = array
-      //     break
-      //   }
-      // }
-      // for (let i = c.height; i > -1; i--) {
-      //   const array = [bounds.left[0], i, bounds.right[0] - bounds.left[0], 1]
-      //   const data = ctx.getImageData.apply(ctx, array).data
-      //   const value = data.reduce((acc, cur) => cur + acc, 0)
+      const end1 = new Date()
 
-      //   if (value) {
-      //     bounds.bottom = array
-      //     break
-      //   }
-      // }
+      // new stroke
+      const start2 = new Date()
 
-      // // ctx.fillStyle = "red"
-      // // Object.entries(bounds).forEach(([key, array]) => {
-      // //   ctx.rect.apply(ctx, array)
-      // //   ctx.fill()
-      // // })
+      const strokeData = ctx.getImageData(0, 0, c.width, c.height).data
+      const { width } = c
 
-      // // the number 45 represents 1/8 of a circle
-      // // by increasing the number the stroke will be better fitted around the source image
-      // const left = bounds.left[0]
-      // const top = bounds.top[1]
-      // cStroke.width = bounds.right[0] - left + strokeSize * 2
-      // cStroke.height = bounds.bottom[1] - top + strokeSize * 2
+      console.log(width)
+      const leftPoints = []
+      const rightPoints = []
+      // for (let r = 0; r < width * 4; r += width * 4) {
+      for (let r = 0; r < strokeData.length; r += width * 4) {
+        const rowNum = r / (width * 4)
+        const rowData = strokeData.slice(r, r + width * 4)
 
-      // const drawButOffset = (x, y) => {
-      //   // ctxStroke.drawImage(c, x, y)
-      //   ctxStroke.drawImage(c, x - left + strokeSize, y - top + strokeSize)
-      // }
+        let bounds = []
 
-      // // ctxStroke.lineWidth = strokeSize * 2
-      // // ctxStroke.beginPath()
-      // // ctxStroke.strokeStyle = "red"
-      // // ctxStroke.lineCap = "round"
-      // // ctxStroke.lineJoin = "round"
-      // // ctxStroke.moveTo(strokeSize, strokeSize)
-      // // ctxStroke.lineTo(strokeSize + c.width, strokeSize)
-      // // ctxStroke.lineTo(strokeSize + c.width, strokeSize + c.height)
-      // // ctxStroke.lineTo(strokeSize, strokeSize + c.height)
-      // // ctxStroke.closePath()
-      // // ctxStroke.stroke()
-
-      // // for (let b = 0; b < 5; b++) {
-      // //   for (let i = 0; i < 45; i += 4) {
-      // //     for (let s = 1; s < strokeSize; s++) {
-      // //       let [x, y] = getAnglePoint(0, 0, s, toRadians(i + b + s / strokeSize))
-
-      // //       drawButOffset(x, y)
-      // //       drawButOffset(x, -y)
-      // //       drawButOffset(-x, -y)
-      // //       drawButOffset(-x, y)
-      // //       drawButOffset(y, x)
-      // //       drawButOffset(y, -x)
-      // //       drawButOffset(-y, -x)
-      // //       drawButOffset(-y, x)
-      // //     }
-      // //   }
-      // // }
-
-      // ctxStroke.fillStyle = "white"
-      // ctxStroke.globalCompositeOperation = "source-in"
-      // ctxStroke.rect(0, 0, cStroke.width, cStroke.height)
-      // ctxStroke.fill()
-
-      // ctxStroke.globalCompositeOperation = "source-over"
-      // ctxStroke.drawImage(c, -left + strokeSize, -top + strokeSize)
-
-      // console.log(
-      //   `%c MAKE THE IMAGE API CALL`,
-      //   `color: black; background-color: cyan; font-style: italic; padding: 0px; margin-left: 0px;`
-      // )
-
-      const canvas = canvasRef.current
-      const ratio = img.width / img.height
-      canvas.width = Math.min(img.width, 2000)
-      canvas.height = Math.min(canvas.width / ratio, 2000)
-      canvas.width = Math.min(canvas.height * ratio, 2000)
-
-      const ctx1 = canvas.getContext("2d")
-
-      ctx1.fillStyle = "white"
-      ctx1.rect(0, 0, canvas.width, canvas.height)
-      ctx1.fill()
-
-      ctx1.drawImage(img, 0, 0, canvas.width, canvas.height)
-
-      // makeBlob(canvas)
-
-      canvas.toBlob(async blobby => {
-        console.log("BLOBBY")
-
-        console.log(blobby)
-
-        var formdata = new FormData()
-        formdata.append("image", blobby, "file")
-        formdata.append("return_form", "")
-
-        var requestOptions = {
-          method: "POST",
-          body: formdata,
-          redirect: "follow",
-          headers: {
-            "ailabapi-api-key": "FoRzuYBZitDA0OdmXjLccKJ8EAr2bSY66aSjh7IQMMN5d9IWvr9kvUx0fbgnafin",
-          },
+        for (let p = 0; p < rowData.length; p += 4) {
+          const colNum = p / 4
+          const [r, g, b, a] = rowData.slice(p, p + 4)
+          if (a > 250) bounds.push(colNum)
         }
 
-        const results = await fetch("https://www.ailabapi.com/api/cutout/portrait/avatar-extraction", requestOptions)
-          .then(response => response.text())
-          .then(result => JSON.parse(result))
-          .catch(error => {
-            console.log("error", error)
-          })
-
-        console.log("RESULTS")
-        console.log(results)
-        if (results.data) {
-          setFacesArray(results.data.elements)
-        } else {
-          setError(results.error_detail.message)
+        if (bounds.length) {
+          leftPoints.push({ rowNum, p: bounds[0] })
+          rightPoints.push({ rowNum, p: bounds.at(-1) - 1 })
         }
-      }, "image/jpeg")
+      }
+
+      ctxStroke2.lineCap = "round"
+      ctxStroke2.lineJoin = "round"
+      ctxStroke2.lineWidth = strokeSize * 2
+      ctxStroke2.strokeStyle = "white"
+
+      ctxStroke2.beginPath()
+
+      const joined = [...leftPoints, ...rightPoints.reverse()]
+
+      joined.forEach(({ rowNum, p }, i) => {
+        // if (i % 4) return
+        ctxStroke2[i ? "lineTo" : "moveTo"](p + strokeSize, rowNum + strokeSize)
+      })
+
+      ctxStroke2.closePath()
+      ctxStroke2.stroke()
+      ctxStroke2.drawImage(c, strokeSize, strokeSize)
+      const end2 = new Date()
+
+      console.log(
+        `%c DONE`,
+        `color: black; background-color: cyan; font-style: italic; padding: 0px; margin-left: 0px;`
+      )
+      console.log(end1.getTime() - start1.getTime(), end2.getTime() - start2.getTime())
     }
   }
 
@@ -213,15 +152,11 @@ const Thing = ({ title, value }) => {
 
   return (
     <div className="image-with-faces">
-      <h4>{title}</h4>
       <div className="images">
-        <img src={value} alt={title} />
+        <img src={url} alt={url} />
         <canvas ref={canvasRef} />
-        {/* <canvas ref={canvasStrokeRef} /> */}
-        {facesArray.map(({ width, height, image_url }, i) => {
-          return <img key={`face---${i}`} src={image_url} alt={`face---${i}`} />
-        })}
-        {error && <div className="error-box">{error}</div>}
+        <canvas ref={canvasStrokeRef} />
+        <canvas ref={canvasStroke2Ref} />
       </div>
     </div>
   )
@@ -234,13 +169,9 @@ function App() {
     <div className="App">
       THE APP
       <div className="image-container" id="image-container">
-        {Object.entries(images).map(([key, value], i) => {
-          // if (!key.includes("man1.png")) return null
-          if (key.includes("crop")) return null
-          // if (i) return null
-
-          return <Thing title={key} key={`key---${i}`} {...{ value }} />
-        })}
+        {/* <StrokeItem url="https://ai-result-rapidapi.ailabtools.com/cutout/segmentHead/2024-01-15/232317-1feabe5d-9b44-7a89-2ab2-1fe98febd009-1705360997.png" /> */}
+        <StrokeItem url={FaceImg} />
+        <StrokeItem url={FaceImg2} />
       </div>
     </div>
   )
